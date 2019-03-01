@@ -99,9 +99,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\IChatYou\IChatYou.csproj">
-      <Project>{A617AE6B-7B3C-4802-B588-6DE281AEC889}</Project>
-      <Name>IChatYou</Name>
+    <ProjectReference Include="..\IChatYou.App\IChatYou.App.csproj">
+      <Project>{0f2ccfe9-7453-4208-b53b-20098245eda9}</Project>
+      <Name>IChatYou.App</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -5,7 +5,7 @@ using System.Text;
 using System.Web.Mvc;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using IChatYou;
-using IChatYou.Controllers;
+using IChatYou.App.Controllers;
 
 namespace IChatYou.Tests.Controllers
 {
