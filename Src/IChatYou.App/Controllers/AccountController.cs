@@ -1,54 +1,59 @@
-﻿using System;
-using System.Globalization;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Security;
-using IChatYou.App.Models;
-
-namespace IChatYou.App.Controllers
+﻿namespace IChatYou.App.Controllers
 {
+    using IChatYou.BL.IdentityServices;
+    using IChatYou.DAL.Entities;
+    using IChatYou.DAL.Entities.User;
+    using IChatYou.DAL.Repositories.Interfaces;
+    using Microsoft.AspNet.Identity;
+    using Microsoft.AspNet.Identity.Owin;
+    using Microsoft.Owin.Security;
+    using Models;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Web;
+    using System.Web.Mvc;
+
     [Authorize]
     public class AccountController : Controller
     {
-        private ApplicationSignInManager _signInManager;
-        private ApplicationUserManager _userManager;
+        private ApplicationSignInManager applicationSignInManager;
+        private ApplicationUserManager applicationUserManager;
+
+        private readonly ILimitRepository limitRepository;
 
         public AccountController()
         {
         }
 
-        public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager )
+        public AccountController(ApplicationUserManager applicationUserManager, ApplicationSignInManager applicationSignInManager, ILimitRepository limitRepository)
         {
-            UserManager = userManager;
-            SignInManager = signInManager;
+            this.applicationUserManager = applicationUserManager;
+            this.applicationSignInManager = applicationSignInManager;
+            this.limitRepository = limitRepository;
         }
 
-        public ApplicationSignInManager SignInManager
+        public ApplicationSignInManager ApplicationSignInManager
         {
             get
             {
-                return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
-            }
-            private set 
-            { 
-                _signInManager = value; 
-            }
-        }
-
-        public ApplicationUserManager UserManager
-        {
-            get
-            {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                return applicationSignInManager ?? DependencyResolver.Current.GetService<ApplicationSignInManager>();
             }
             private set
             {
-                _userManager = value;
+                applicationSignInManager = value;
+            }
+        }
+
+        public ApplicationUserManager ApplicationUserManager
+        {
+            get
+            {
+                return applicationUserManager ?? DependencyResolver.Current.GetService<ApplicationUserManager>();
+            }
+            private set
+            {
+                applicationUserManager = value;
             }
         }
 
@@ -73,9 +78,20 @@ namespace IChatYou.App.Controllers
                 return View(model);
             }
 
+            // Require the user to have a confirmed email before they can log on.
+            var user = await ApplicationUserManager.FindByNameAsync(model.UserName);
+            if (user != null)
+            {
+                if (!await ApplicationUserManager.IsEmailConfirmedAsync(user.Id))
+                {
+                    ViewBag.errorMessage = "You must have a confirmed email to log on.";
+                    return View("Error");
+                }
+            }
+
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, change to shouldLockout: true
-            var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
+            var result = await ApplicationSignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
             switch (result)
             {
                 case SignInStatus.Success:
@@ -97,7 +113,7 @@ namespace IChatYou.App.Controllers
         public async Task<ActionResult> VerifyCode(string provider, string returnUrl, bool rememberMe)
         {
             // Require that the user has already logged in via username/password or external login
-            if (!await SignInManager.HasBeenVerifiedAsync())
+            if (!await ApplicationSignInManager.HasBeenVerifiedAsync())
             {
                 return View("Error");
             }
@@ -120,7 +136,7 @@ namespace IChatYou.App.Controllers
             // If a user enters incorrect codes for a specified amount of time then the user account 
             // will be locked out for a specified amount of time. 
             // You can configure the account lockout settings in IdentityConfig
-            var result = await SignInManager.TwoFactorSignInAsync(model.Provider, model.Code, isPersistent:  model.RememberMe, rememberBrowser: model.RememberBrowser);
+            var result = await ApplicationSignInManager.TwoFactorSignInAsync(model.Provider, model.Code, isPersistent: model.RememberMe, rememberBrowser: model.RememberBrowser);
             switch (result)
             {
                 case SignInStatus.Success:
@@ -147,23 +163,36 @@ namespace IChatYou.App.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Register(RegisterViewModel model)
+        public async Task<ActionResult> Register(RegisterModel model)
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user, model.Password);
+                var user = new ApplicationUser { UserName = model.UserName, Email = model.Email, FullName = model.FullName, PhoneNumber = model.PhoneNumber, IsVisible = true };
+                var result = await ApplicationUserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
-                    
+                    limitRepository.Add(new Limit { UserId = user.Id, Date = DateTime.UtcNow, Value = 5 });
+                    await limitRepository.SaveChangesAsync();
+
+                    //await ApplicationSignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
+
                     // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
                     // Send an email with this link
                     // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
                     // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
                     // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
 
-                    return RedirectToAction("Index", "Home");
+                    var code = await ApplicationUserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+
+                    await ApplicationUserManager.SendEmailAsync(user.Id, "Confirm your account", $"Please confirm your account by clicking <a href=\"{callbackUrl}\">here</a>");
+
+                    ViewBag.Message = "Check your email and confirm your account, you must be confirmed before you can log in.";
+
+                    return View("Info");
+
+                    //return RedirectToAction("Index", "Home");
                 }
                 AddErrors(result);
             }
@@ -181,7 +210,9 @@ namespace IChatYou.App.Controllers
             {
                 return View("Error");
             }
-            var result = await UserManager.ConfirmEmailAsync(userId, code);
+
+            var result = await ApplicationUserManager.ConfirmEmailAsync(userId, code);
+
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
@@ -202,8 +233,8 @@ namespace IChatYou.App.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await UserManager.FindByNameAsync(model.Email);
-                if (user == null || !(await UserManager.IsEmailConfirmedAsync(user.Id)))
+                var user = await ApplicationUserManager.FindByNameAsync(model.Email);
+                if (user == null || !(await ApplicationUserManager.IsEmailConfirmedAsync(user.Id)))
                 {
                     // Don't reveal that the user does not exist or is not confirmed
                     return View("ForgotPasswordConfirmation");
@@ -248,13 +279,13 @@ namespace IChatYou.App.Controllers
             {
                 return View(model);
             }
-            var user = await UserManager.FindByNameAsync(model.Email);
+            var user = await ApplicationUserManager.FindByNameAsync(model.Email);
             if (user == null)
             {
                 // Don't reveal that the user does not exist
                 return RedirectToAction("ResetPasswordConfirmation", "Account");
             }
-            var result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
+            var result = await ApplicationUserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
             if (result.Succeeded)
             {
                 return RedirectToAction("ResetPasswordConfirmation", "Account");
@@ -287,12 +318,12 @@ namespace IChatYou.App.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> SendCode(string returnUrl, bool rememberMe)
         {
-            var userId = await SignInManager.GetVerifiedUserIdAsync();
+            var userId = await ApplicationSignInManager.GetVerifiedUserIdAsync();
             if (userId == null)
             {
                 return View("Error");
             }
-            var userFactors = await UserManager.GetValidTwoFactorProvidersAsync(userId);
+            var userFactors = await ApplicationUserManager.GetValidTwoFactorProvidersAsync(userId);
             var factorOptions = userFactors.Select(purpose => new SelectListItem { Text = purpose, Value = purpose }).ToList();
             return View(new SendCodeViewModel { Providers = factorOptions, ReturnUrl = returnUrl, RememberMe = rememberMe });
         }
@@ -310,7 +341,7 @@ namespace IChatYou.App.Controllers
             }
 
             // Generate the token and send it
-            if (!await SignInManager.SendTwoFactorCodeAsync(model.SelectedProvider))
+            if (!await ApplicationSignInManager.SendTwoFactorCodeAsync(model.SelectedProvider))
             {
                 return View("Error");
             }
@@ -329,7 +360,7 @@ namespace IChatYou.App.Controllers
             }
 
             // Sign in the user with this external login provider if the user already has a login
-            var result = await SignInManager.ExternalSignInAsync(loginInfo, isPersistent: false);
+            var result = await ApplicationSignInManager.ExternalSignInAsync(loginInfo, isPersistent: false);
             switch (result)
             {
                 case SignInStatus.Success:
@@ -368,13 +399,13 @@ namespace IChatYou.App.Controllers
                     return View("ExternalLoginFailure");
                 }
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user);
+                var result = await ApplicationUserManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
-                    result = await UserManager.AddLoginAsync(user.Id, info.Login);
+                    result = await ApplicationUserManager.AddLoginAsync(user.Id, info.Login);
                     if (result.Succeeded)
                     {
-                        await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+                        await ApplicationSignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
                         return RedirectToLocal(returnUrl);
                     }
                 }
@@ -407,16 +438,16 @@ namespace IChatYou.App.Controllers
         {
             if (disposing)
             {
-                if (_userManager != null)
+                if (applicationUserManager != null)
                 {
-                    _userManager.Dispose();
-                    _userManager = null;
+                    applicationUserManager.Dispose();
+                    applicationUserManager = null;
                 }
 
-                if (_signInManager != null)
+                if (applicationSignInManager != null)
                 {
-                    _signInManager.Dispose();
-                    _signInManager = null;
+                    applicationSignInManager.Dispose();
+                    applicationSignInManager = null;
                 }
             }
 

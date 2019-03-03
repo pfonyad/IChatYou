@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNet.Identity
+
 @if (Request.IsAuthenticated)
 {
     using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
@@ -6,6 +7,15 @@
     @Html.AntiForgeryToken()
 
     <ul class="nav navbar-nav navbar-right">
+        <li>
+            <a id="btn-switchstate" href="#">My state: visible <i class="glyphicon glyphicon-eye-open"></i></a>
+        </li>
+        <li>
+            <a id="btn-todayleft" href="#">Today left: <span class="badge">5</span></a>
+        </li>
+        <li>
+            <a href="#">New <span class="badge">0</span></a>
+        </li>
         <li>
             @Html.ActionLink("Hello " + User.Identity.GetUserName() + "!", "Index", "Manage", routeValues: null, htmlAttributes: new { title = "Manage" })
         </li>

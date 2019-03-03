@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,7 +33,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNet.Identity.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.2.2\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNet.Identity.EntityFramework, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Identity.EntityFramework.2.2.2\lib\net45\Microsoft.AspNet.Identity.EntityFramework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -41,7 +56,63 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApplicationDbContext.cs" />
+    <Compile Include="Entities\Banning.cs" />
+    <Compile Include="Entities\BaseMessage.cs" />
+    <Compile Include="Entities\Favorit.cs" />
+    <Compile Include="Entities\Limit.cs" />
+    <Compile Include="Entities\Menu\MenuItem.cs" />
+    <Compile Include="Entities\MessageSwitch.cs" />
+    <Compile Include="Entities\MessageView.cs" />
+    <Compile Include="Entities\Base\Log.cs" />
+    <Compile Include="Entities\Base\Setting.cs" />
+    <Compile Include="Entities\User\ApplicationRole.cs" />
+    <Compile Include="Entities\User\ApplicationUser.cs" />
+    <Compile Include="Entities\User\ApplicationUserClaim.cs" />
+    <Compile Include="Entities\User\ApplicationUserLogin.cs" />
+    <Compile Include="Entities\User\ApplicationUserRole.cs" />
+    <Compile Include="Mapping\ApplicationRoleMap.cs" />
+    <Compile Include="Mapping\ApplicationUserClaimMap.cs" />
+    <Compile Include="Mapping\ApplicationUserLoginMap.cs" />
+    <Compile Include="Mapping\ApplicationUserMap.cs" />
+    <Compile Include="Mapping\ApplicationUserRoleMap.cs" />
+    <Compile Include="Mapping\BanningMap.cs" />
+    <Compile Include="Mapping\FavoritMap.cs" />
+    <Compile Include="Mapping\LimitMap.cs" />
+    <Compile Include="Mapping\LogMap.cs" />
+    <Compile Include="Mapping\MessageSwitchMap.cs" />
+    <Compile Include="Mapping\SettingMap.cs" />
+    <Compile Include="Migrations\201903022052153_FirstMigration.cs" />
+    <Compile Include="Migrations\201903022052153_FirstMigration.Designer.cs">
+      <DependentUpon>201903022052153_FirstMigration.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\Interfaces\ILimitRepository.cs" />
+    <Compile Include="Repositories\Interfaces\IMessageRepository.cs" />
+    <Compile Include="Repositories\Interfaces\IRepository.cs" />
+    <Compile Include="Repositories\Interfaces\ISettingRepository.cs" />
+    <Compile Include="Repositories\Interfaces\IUserRepository.cs" />
+    <Compile Include="Repositories\LimitRepository.cs" />
+    <Compile Include="Repositories\MessageRepository.cs" />
+    <Compile Include="Repositories\Repository.cs" />
+    <Compile Include="Repositories\SettingRepository.cs" />
+    <Compile Include="Repositories\UserRepository.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\201903022052153_FirstMigration.resx">
+      <DependentUpon>201903022052153_FirstMigration.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IChatYou.Common\IChatYou.Common.csproj">
+      <Project>{A498FDDD-9268-40BF-A13F-FCC0EEEEDEB1}</Project>
+      <Name>IChatYou.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

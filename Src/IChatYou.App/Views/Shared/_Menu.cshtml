@@ -1,0 +1,36 @@
+﻿@model List<IChatYou.DAL.Menu.MenuItem>
+
+<ul class="nav navbar-nav">
+
+    @if (Model.Any())
+    {
+        foreach (var menu in Model)
+        {
+            if (menu.Items.Any())
+            {
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        @menu.Text <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        @foreach (var item in menu.Items)
+                        {
+                            var disabled = string.IsNullOrEmpty(item.Action) && string.IsNullOrEmpty(item.Controller);
+                            if (!item.IsSeparator)
+                            {
+                                <li class="@(disabled ? "disabled" : "")">
+                                    @Html.ActionLink(item.Text, item.Action, item.Controller, item.RouteValues, null)
+                                </li>
+                            }
+                            else
+                            {
+                                <li role="separator" class="divider"></li>
+                            }
+                        }
+                    </ul>
+                </li>
+            }
+        }
+    }
+
+</ul>

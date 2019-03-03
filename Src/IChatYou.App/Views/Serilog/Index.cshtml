@@ -1,0 +1,78 @@
+﻿@using IChatYou.DAL.Entities.Base
+
+@{
+    ViewBag.Title = "Logs";
+}
+
+@Styles.Render("~/Content/serilog")
+
+<h2>Logs</h2>
+<table id="logsTable" class="table table-striped table-bordered table-hover dt-responsive nowrap" cellspacing="0">
+    <thead></thead>
+    <tfoot>
+        <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+    </tfoot>
+</table>
+
+@section scripts
+{
+    <script>
+        $(document)
+            .ready(function () {
+                $('#logsTable')
+                    .DataTable({
+                        processing: true,
+                        serverSide: true,
+                        ajax: "/Serilog/PageData",
+                        order: [[0, "desc"]],
+                        columns: [
+                            {
+                                name: "@nameof(Log.Id)",
+                                data: "id",
+                                title: "Id",
+                                sortable: true,
+                                searchable: true
+                            },
+                            {
+                                name: "@nameof(Log.Message)",
+                                data: "message",
+                                title: "Message",
+                                sortable: true,
+                                searchable: true
+                            },
+                            {
+                                name: "@nameof(Log.Exception)",
+                                data: "exception",
+                                title: "Exception",
+                                sortable: true,
+                                searchable: true
+                            },
+                            {
+                                name: "@nameof(Log.Level)",
+                                data: "level",
+                                title: "Level",
+                                sortable: true,
+                                searchable: true
+                            },
+                            {
+                                name: "@nameof(Log.TimeStamp)",
+                                data: "timeStamp",
+                                title: "Date",
+                                sortable: true,
+                                searchable: true,
+                                width: 130
+                            }
+                        ],
+                        initComplete: tableInitComplete
+                    });
+            });
+    </script>
+}
+
+@Scripts.Render("~/bundles/serilog")

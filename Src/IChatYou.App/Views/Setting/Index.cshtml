@@ -1,0 +1,88 @@
+﻿@using IChatYou.DAL.Entities.Base
+
+@model Setting
+
+@{
+    ViewBag.Title = "Settings";
+}
+
+@Scripts.Render("~/bundles/setting")
+
+<h2>Settings</h2>
+<table id="myTable" class="table table-striped table-bordered table-hover dt-responsive nowrap" cellspacing="0"></table>
+@{
+    Html.RenderPartial("_Modal");
+}
+
+@section scripts
+{
+    <script>
+        $(document)
+            .ready(function() {
+                var myTable = $('#myTable')
+                    .DataTable({
+                        processing: true,
+                        serverSide: true,
+                        ajax: "@Url.Action("PageData", "Setting")",
+                        order: [[0, "asc"]],
+                        columns: [
+                            {
+                                name: "@nameof(Setting.Name)",
+                                data: "@nameof(Setting.Name).ToLowerInvariant()",
+                                title: "Key",
+                                sortable: true,
+                                searchable: true
+                            },
+                            {
+                                name: "@nameof(Setting.Value)",
+                                data: "@nameof(Setting.Value).ToLowerInvariant()",
+                                title: "Value",
+                                sortable: true,
+                                searchable: true
+                            },
+                            {
+                                targets: -1,
+                                data: null,
+                                title: "Operations",
+                                defaultContent: "<button class='action-edit'>Szerkesztés</button>",
+                                sortable: false,
+                                searchable: false
+                            }
+                        ]
+                    });
+                $(document)
+                    .on('click',
+                        '#myTable tbody button.action-edit',
+                        function() {
+                            var data = myTable.row($(this).parents('tr')).data();
+
+                            $("#myModal").modal("show");
+                            $('#myModal')
+                                .on('shown.bs.modal',
+                                    function(e) {
+                                        $("#@Html.IdFor(m => m.Name)").val(data.@nameof(Setting.Name).ToLowerInvariant());
+                                        $("#@Html.IdFor(m => m.Value)").val(data.@nameof(Setting.Value).ToLowerInvariant());
+                                    });
+                        });
+                $(document)
+                    .on('click',
+                        '#saveButton',
+                        function() {
+                            var model = {
+                                name: $("#@Html.IdFor(m => m.Name)").val(),
+                                value: $("#@Html.IdFor(m => m.Value)").val()
+                            };
+                            $.post("@Url.Action("Update")",
+                                model,
+                                function(e) {
+                                    if (e.success) {
+                                        $("#myModal").modal("hide");
+                                        myTable.ajax.reload();
+                                    } else {
+                                        alert("Error in operation!");
+                                    }
+                                });
+                        });
+            });
+    </script>
+}
