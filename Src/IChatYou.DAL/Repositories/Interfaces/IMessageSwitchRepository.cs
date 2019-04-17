@@ -2,7 +2,7 @@
 {
     using IChatYou.DAL.Entities;
 
-    public interface ILimitRepository : IRepository<Limit, string>
+    public interface IMessageSwitchRepository : IRepository<MessageSwitch, int>
     {
         
     }

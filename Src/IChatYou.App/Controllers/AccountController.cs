@@ -1,6 +1,7 @@
 ﻿namespace IChatYou.App.Controllers
 {
     using IChatYou.BL.IdentityServices;
+    using IChatYou.BL.Services.Interfaces;
     using IChatYou.DAL.Entities;
     using IChatYou.DAL.Entities.User;
     using IChatYou.DAL.Repositories.Interfaces;
@@ -20,17 +21,17 @@
         private ApplicationSignInManager applicationSignInManager;
         private ApplicationUserManager applicationUserManager;
 
-        private readonly ILimitRepository limitRepository;
+        private readonly ILimitService limitService;
 
         public AccountController()
         {
         }
 
-        public AccountController(ApplicationUserManager applicationUserManager, ApplicationSignInManager applicationSignInManager, ILimitRepository limitRepository)
+        public AccountController(ApplicationUserManager applicationUserManager, ApplicationSignInManager applicationSignInManager, ILimitService limitService)
         {
             this.applicationUserManager = applicationUserManager;
             this.applicationSignInManager = applicationSignInManager;
-            this.limitRepository = limitRepository;
+            this.limitService = limitService;
         }
 
         public ApplicationSignInManager ApplicationSignInManager
@@ -171,9 +172,8 @@
                 var result = await ApplicationUserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    limitRepository.Add(new Limit { UserId = user.Id, Date = DateTime.UtcNow, Value = 5 });
-                    await limitRepository.SaveChangesAsync();
-
+                    limitService.AddNewLimit(new Limit { UserId = user.Id, Date = DateTime.UtcNow, Value = 5 });
+                    
                     //await ApplicationSignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
 
                     // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771

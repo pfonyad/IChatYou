@@ -1,6 +1,5 @@
 ﻿namespace IChatYou.App.Controllers
 {
-    using DAL.Repositories.Interfaces;
     using IChatYou.BL.IdentityServices;
     using IChatYou.BL.Services.Interfaces;
     using IChatYou.DAL.Menu;
@@ -12,14 +11,12 @@
 
     public class HomeController : Controller
     {
-        private readonly IUserRepository userRepository;
         private readonly ApplicationUserManager applicationUserManager;
         private readonly IMenuService menuService;
 
-        public HomeController(IUserRepository userRepository, ILogger logger, ApplicationUserManager userManager, IMenuService menuService)
+        public HomeController(ILogger logger, ApplicationUserManager userManager, IMenuService menuService)
         {
-            this.userRepository = userRepository;
-            this.applicationUserManager = userManager;
+            applicationUserManager = userManager;
             this.menuService = menuService;
         }
 

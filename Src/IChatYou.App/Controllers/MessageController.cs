@@ -21,17 +21,12 @@
     [Authorize]
     public class MessageController : Controller
     {
-        private readonly IMessageRepository messageRepository;
-        private readonly IUserRepository userRepository;
-        private readonly ILimitRepository limitRepository;
         private readonly IMessageService messageService;
+        private readonly IUserService userService;
         private readonly ILogger logger;
 
-        public MessageController(IMessageRepository messageRepository, IUserRepository userRepository, ILimitRepository limitRepository, ILogger logger, IMessageService messageService)
+        public MessageController(ILogger logger, IMessageService messageService, IUserService userService)
         {
-            this.messageRepository = messageRepository;
-            this.userRepository = userRepository;
-            this.limitRepository = limitRepository;
             this.logger = logger;
             this.messageService = messageService;
         }
@@ -54,7 +49,7 @@
 
             try
             {
-                if (limitRepository.GetLimitByUserId(User.Identity.GetUserId()) < 1)
+                if (messageService.GetLimitByUserId(User.Identity.GetUserId()) < 1)
                 {
                     result.IsSuccess = true;
                     result.Result = "You have not enough message to sent!";
@@ -62,7 +57,7 @@
                 else
                 {
                     messageService.Send(User.Identity.GetUserId(), targetUserName, message);
-                    limitRepository.DecreaseLimitByUserId(User.Identity.GetUserId());
+                    messageService.DecreaseLimitByUserId(User.Identity.GetUserId());
 
                     result.IsSuccess = true;
                     result.Result = "Message sent!";
@@ -90,7 +85,7 @@
 
             try
             {
-                var user = userRepository.Get(User.Identity.GetUserId());
+                var user = userService.GetUserById(User.Identity.GetUserId());
 
                 if (user == null)
                 {
@@ -117,18 +112,9 @@
 
             try
             {
-                var user = userRepository.Get(User.Identity.GetUserId());
-
-                if (user == null)
-                {
-                    throw new Exception("UserNotFound");
-                }
-
-                user.IsVisible = !user.IsVisible;
-                userRepository.SaveChanges();
+                result.Result = userService.SwitchState(User.Identity.GetUserId());
 
                 result.IsSuccess = true;
-                result.Result = user.IsVisible;
             }
             catch (Exception ex)
             {
@@ -149,7 +135,7 @@
             {
                 if (User.Identity.IsAuthenticated)
                 {
-                    result.Result = limitRepository.GetLimitByUserId(User.Identity.GetUserId());
+                    result.Result = messageService.GetLimitByUserId(User.Identity.GetUserId());
                     result.IsSuccess = true;
                 }
                 else
@@ -177,7 +163,7 @@
                 {
                     throw new ArgumentNullException("request");
                 }
-                var d = messageRepository.GetMessagesByUserId(User.Identity.GetUserId());
+                var d = messageService.GetMessagesByUserId(User.Identity.GetUserId());
                 var data = Mapper.Map<IEnumerable<MessageViewModel>>(d);
 
                 if (!string.IsNullOrEmpty(request.Search.Value))
@@ -217,7 +203,7 @@
                     throw new ArgumentNullException("request");
                 }
 
-                var data = userRepository.GetAll().Where(usr => usr.IsVisible && usr.Id != User.Identity.GetUserId());
+                var data = userService.GetAllUser().Where(usr => usr.IsVisible && usr.Id != User.Identity.GetUserId());
 
                 if (!string.IsNullOrEmpty(request.Search.Value))
                 {

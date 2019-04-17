@@ -2,9 +2,9 @@
 {
     using AutoMapper;
     using Common.Constants;
-    using DAL.Repositories.Interfaces;
     using DataTables.AspNet.Core;
     using DataTables.AspNet.Mvc5;
+    using IChatYou.BL.Services.Interfaces;
     using IChatYou.DAL.Entities.Base;
     using System.Collections.Generic;
     using System.Linq;
@@ -14,11 +14,11 @@
     [Authorize(Roles = Authentication.Roles.WebAdminSetting)]
     public class SettingController : Controller
     {
-        private readonly ISettingRepository settingRepository;
+        private readonly ISettingService settingService;
 
-        public SettingController(ISettingRepository settingRepository)
+        public SettingController(ISettingService settingService)
         {
-            this.settingRepository = settingRepository;
+            this.settingService = settingService;
         }
 
         public ActionResult Index()
@@ -27,17 +27,16 @@
         }
 
         [HttpPost]
-        public ActionResult Update(Setting model)
+        public ActionResult Update(Setting setting)
         {
-            settingRepository.Set(model.Name, model.Value);
-            settingRepository.SaveChanges();
+            settingService.Update(setting);
 
             return Json(new { success = true});
         }
 
         public ActionResult PageData(IDataTablesRequest request)
         {
-            var data = settingRepository.GetAll().AsQueryable();
+            var data = settingService.GetAllSetting().AsQueryable();
             var filteredData = data.Where(item => item.Name.Contains(request.Search.Value));
 
             var orderings = request.Columns

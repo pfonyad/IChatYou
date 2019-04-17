@@ -1,6 +1,7 @@
 ﻿namespace IChatYou.BL.Services
 {
     using DAL.Repositories.Interfaces;
+    using IChatYou.DAL.Entities.Base;
     using Interfaces;
     using System;
     using System.Collections.Generic;
@@ -60,6 +61,17 @@
         {
             Load();
             Save();
+        }
+
+        public void Update(Setting setting)
+        {
+            settingRepository.Set(setting.Name, setting.Value);
+            settingRepository.SaveChanges();
+        }
+
+        public IEnumerable<Setting> GetAllSetting()
+        {
+            return settingRepository.GetAll();
         }
     }
 }

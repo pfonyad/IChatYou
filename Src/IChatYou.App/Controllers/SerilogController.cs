@@ -2,9 +2,9 @@
 {
     using AutoMapper;
     using Common.Constants;
-    using DAL;
     using DataTables.AspNet.Core;
     using DataTables.AspNet.Mvc5;
+    using IChatYou.BL.Services.Interfaces;
     using IChatYou.DAL.Entities.Base;
     using System;
     using System.Collections.Generic;
@@ -16,11 +16,11 @@
     [Authorize(Roles = Authentication.Roles.WebAdminLog)]
     public class SerilogController : Controller
     {
-        private readonly ApplicationDbContext context;
+        private readonly ILogService logService;
 
-        public SerilogController(ApplicationDbContext context)
+        public SerilogController(ILogService logService)
         {
-            this.context = context;
+            this.logService = logService;
         }
 
         public ActionResult Index()
@@ -30,7 +30,7 @@
 
         public ActionResult PageData(IDataTablesRequest request)
         {
-            var data = context.Logs;
+            var data = logService.GetAllLog();
             var filteredData = data.Where(item =>
                 item.Message.Contains(request.Search.Value) ||
                 item.Exception.Contains(request.Search.Value));
